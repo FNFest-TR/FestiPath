@@ -53,7 +53,7 @@
 4.  **Run the Script:**
     * Scripti çalıştırın:
     ```bash
-    python main.py
+    python path.pyw
     ```
 
 ### Controls / Kontroller
