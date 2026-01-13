@@ -68,7 +68,9 @@ DISPLAY_NAME_MAP = {
     'Guitar': 'Lead', 'Lead': 'Lead',
     'PlasticGuitar': 'Pro Guitar', 'ProGuitar': 'Pro Guitar',
     'PlasticBass': 'Pro Bass', 'ProBass': 'Pro Bass',
-    'Bass': 'Bass', 'Drums': 'Drums', 'Vocals': 'Vocals'
+    'Bass': 'Bass',
+    'Drums': 'Drums', 'Drum': 'Drums', 
+    'Vocals': 'Vocals', 'Vocal': 'Vocals'
 }
 
 # İkon Dosyaları
@@ -450,4 +452,5 @@ class FestivalPathOverlay:
 if __name__ == "__main__":
     root = tk.Tk()
     app = FestivalPathOverlay(root)
+
     root.mainloop()
