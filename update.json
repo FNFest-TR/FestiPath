@@ -1,9 +1,9 @@
-### English
-* **Real-time Detection:** Automatically detects the song and instrument via `FortniteGame.log`.
-* **Live Path Display:** Shows when to activate Overdrive using color-coded text (R, G, Y, B, O).
-* **Customizable UI:**
+
+Real-time Detection:** Automatically detects the song and instrument via `FortniteGame.log`.
+Live Path Display:** Shows when to activate Overdrive using color-coded text (R, G, Y, B, O).
+Customizable UI:**
     * Adjust font size and window opacity.
     * Toggle background darkening for better readability.
     * Draggable window (Click & Drag).
-* **Dual Language:** Supports English and Turkish interfaces.
-* **Always on Top:** Stays over the game window (Borderless Fullscreen recommended).
+Dual Language:** Supports English and Turkish interfaces.
+Always on Top:** Stays over the game window (Borderless Fullscreen recommended).
