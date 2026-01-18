@@ -1,2 +1,4 @@
 requests
 keyboard
+pygame
+edge-tts
