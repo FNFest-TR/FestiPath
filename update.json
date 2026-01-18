@@ -1,5 +1,16 @@
 {
   "version": "v2.6",
   "url": "https://github.com/FNFest-TR/FestiPath/releases/latest",
-  "notes": "--- [ENGLISH] ---\n\nv2.6 - Gamepad Master & Automation Update\n\n* Auto-Read First Line: The system now automatically announces the first path of a song as soon as it starts.\n* Gamepad Axis (Analog) Disabled: Analog sticks and sensitive triggers are disabled for hotkeys to prevent drift. Only digital buttons can be assigned.\n* Rescue Window: Press 'F7' to instantly center the window if it goes off-screen.\n* Stability: Fixed song detection and log reading delays.\n\n--- [TURKCE] ---\n\nv2.6 - Gamepad Master ve Otomasyon Guncellemesi\n\n* Ilk Notayi Otomatik Oku: Sarki basladiginda ilk yolu sistem otomatik olarak seslendirir.\n* Gamepad Axis (Analog) Iptali: Stick drifti engellemek icin analog cubuk ve hassas tetikler devre disi birakildi. Artik sadece net butonlar atanabilir.\n* Pencereyi Kurtar: Pencere ekran disina cikarsa 'F7' ile aninda merkeze alabilirsiniz.\n* Stabilite: Sarki yakalama ve log okuma gecikmeleri giderildi."
+  "notes_tr": [
+    "**İlk Notayı Otomatik Oku:** Şarkı başladığında ilk yolu sistem otomatik olarak seslendirir (Ayarlardan kapatılabilir).",
+    "**Gamepad Analog İptali:** Stick drifti engellemek için analog çubuk ve hassas tetikler devre dışı bırakıldı. Sadece tuşlar aktif.",
+    "**Pencereyi Kurtar:** Pencere ekran dışına çıkarsa 'F7' ile anında merkeze alabilirsiniz.",
+    "**Stabilite:** Şarkı yakalama ve log okuma gecikmeleri giderildi."
+  ],
+  "notes_en": [
+    "**Auto-Read First Line:** The system now automatically announces the first path of a song as soon as it starts.",
+    "**Gamepad Axis Disabled:** Analog sticks and triggers are disabled to prevent drift. Only digital buttons can be assigned.",
+    "**Rescue Window:** Press 'F7' to instantly center the window if it goes off-screen.",
+    "**Stability:** Fixed song detection and log reading delays."
+  ]
 }
