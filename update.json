@@ -1,5 +1,5 @@
 {
-  "version": "v2.3",
+  "version": "v2.4",
   "url": "https://github.com/FNFest-TR/FestiPath/releases/latest",
-  "notes": "- Gamepad destegi gelistirildi (L2/R2 ve D-Pad eklendi).\n- Pencere ekran disina cikarsa F7 ile ortalama eklendi.\n- Ses motoru iyilestirildi."
+  "notes": "- Ilk notayi otomatik okuma ayari eklendi.\n- Gamepad tus simgeleri eklendi.\n- Stick drift (Axis) girisleri tamamen engellendi.\n- Pencere ortalama tusu (F7) iyilestirildi."
 }
