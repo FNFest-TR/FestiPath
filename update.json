@@ -1,9 +1,5 @@
-
-Real-time Detection:** Automatically detects the song and instrument via `FortniteGame.log`.
-Live Path Display:** Shows when to activate Overdrive using color-coded text (R, G, Y, B, O).
-Customizable UI:**
-    * Adjust font size and window opacity.
-    * Toggle background darkening for better readability.
-    * Draggable window (Click & Drag).
-Dual Language:** Supports English and Turkish interfaces.
-Always on Top:** Stays over the game window (Borderless Fullscreen recommended).
+{
+  "version": "v2.3",
+  "url": "https://github.com/FNFest-TR/FestiPath/releases/latest",
+  "notes": "- Gamepad destegi gelistirildi (L2/R2 ve D-Pad eklendi).\n- Pencere ekran disina cikarsa F7 ile ortalama eklendi.\n- Ses motoru iyilestirildi."
+}
