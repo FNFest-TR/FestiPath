@@ -1,16 +1,18 @@
 {
-  "version": "v2.6",
+  "version": "v2.0",
   "url": "https://github.com/FNFest-TR/FestiPath/releases/latest",
   "notes_tr": [
-    "**İlk Notayı Otomatik Oku:** Şarkı başladığında ilk yolu sistem otomatik olarak seslendirir (Ayarlardan kapatılabilir).",
-    "**Gamepad Analog İptali:** Stick drifti engellemek için analog çubuk ve hassas tetikler devre dışı bırakıldı. Sadece tuşlar aktif.",
-    "**Pencereyi Kurtar:** Pencere ekran dışına çıkarsa 'F7' ile anında merkeze alabilirsiniz.",
-    "**Stabilite:** Şarkı yakalama ve log okuma gecikmeleri giderildi."
+    "**MODERN ARAYÜZ (v2.0):** Ayarlar ve Güncelleme ekranları tamamen yenilendi. Artık sekmeli, yatay ve çok daha okunaklı bir tasarıma sahip.",
+    "**GAMEPAD DRIFT ÇÖZÜMÜ:** Analog çubuklar (Axis) ve hassas tetikler tamamen devre dışı bırakıldı. Sadece tuşlar algılanıyor, böylece yanlış okumalar (drift) tarih oldu.",
+    "**AKILLI OTOMASYON:** Şarkı başladığında ilk yolu/notayı sistem otomatik okur (Ayarlardan açıp kapatabilirsiniz).",
+    "**GENİŞLETİLMİŞ SES:** Ses motoru artık 31. yola kadar (31st) tüm sıraları kusursuz seslendiriyor.",
+    "**PENCEREYİ KURTAR:** Overlay ekran dışına taşarsa 'F7' tuşu ile anında merkeze geri çağırabilirsiniz."
   ],
   "notes_en": [
-    "**Auto-Read First Line:** The system now automatically announces the first path of a song as soon as it starts.",
-    "**Gamepad Axis Disabled:** Analog sticks and triggers are disabled to prevent drift. Only digital buttons can be assigned.",
-    "**Rescue Window:** Press 'F7' to instantly center the window if it goes off-screen.",
-    "**Stability:** Fixed song detection and log reading delays."
+    "**MODERN UI (v2.0):** Settings and Update screens have been completely overhauled. Now features a tabbed, horizontal, and much cleaner design.",
+    "**GAMEPAD DRIFT FIX:** Analog sticks (Axis) and sensitive triggers are completely disabled. Only digital buttons are registered to prevent ghost inputs.",
+    "**SMART AUTOMATION:** System auto-reads the first path/note when the song starts (Toggle in settings).",
+    "**EXTENDED AUDIO:** TTS engine now flawlessly supports reading up to the 31st ordinal path.",
+    "**RESCUE WINDOW:** Press 'F7' to instantly center the window if it goes off-screen."
   ]
 }
