@@ -14,20 +14,7 @@ import base64
 import asyncio
 import edge_tts
 import warnings
-import shutil
-
-def resource_path(relative_path):
-    """ EXE içine gömülen dosyalara erişmek için geçici yolu bulur """
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
-# Klasör yolunu bu fonksiyonla tanımla
-CACHE_DIR = resource_path('tts_cache')
-
-
+import math
 
 # --- SİSTEM AYARLARI ---
 warnings.filterwarnings("ignore")
@@ -35,7 +22,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
 # --- SABİTLER ---
-APP_VERSION = "v2.0"
+APP_VERSION = "v2.1"
 REPO_OWNER = "FNFest-TR"
 REPO_NAME = "FestiPath"
 DEVELOPER_NAME = "ekicionur"
@@ -51,6 +38,14 @@ if getattr(sys, 'frozen', False):
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+def resource_path(relative_path):
+    """ EXE içine gömülen dosyalara erişmek için geçici yolu bulur """
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 LOG_PATH = os.path.expandvars(r'%localappdata%\FortniteGame\Saved\Logs\FortniteGame.log')
 DATA_URL = "https://fnfpaths.github.io/fnfp.js"
 MAPPING_URL = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/main/song_id.json"
@@ -58,38 +53,69 @@ IMG_BASE_URL = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/main
 CACHE_DIR = os.path.join(BASE_DIR, 'tts_cache')
 CONFIG_FILE = os.path.join(BASE_DIR, 'config.ini')
 
-# --- SIRA SAYILARI (Genişletilmiş - 31'e kadar) ---
-ORDINALS_TR = {
-    '1st': 'Birinci', '1nd': 'Birinci', '1rd': 'Birinci', '1th': 'Birinci',
-    '2nd': 'İkinci', '2st': 'İkinci', '2rd': 'İkinci', '2th': 'İkinci',
-    '3rd': 'Üçüncü', '3st': 'Üçüncü', '3nd': 'Üçüncü', '3th': 'Üçüncü',
-    '4th': 'Dördüncü', '5th': 'Beşinci', '6th': 'Altıncı', '7th': 'Yedinci', 
-    '8th': 'Sekizinci', '9th': 'Dokuzuncu', '10th': 'Onuncu',
-    '11th': 'On birinci', '12th': 'On ikinci', '13th': 'On üçüncü',
-    '14th': 'On dördüncü', '15th': 'On beşinci', '16th': 'On altıncı',
-    '17th': 'On yedinci', '18th': 'On sekizinci', '19th': 'On dokuzuncu', '20th': 'Yirminci',
-    '21st': 'Yirmi birinci', '22nd': 'Yirmi ikinci', '23rd': 'Yirmi üçüncü', '24th': 'Yirmi dördüncü',
-    '25th': 'Yirmi beşinci', '26th': 'Yirmi altıncı', '27th': 'Yirmi yedinci', '28th': 'Yirmi sekizinci',
-    '29th': 'Yirmi dokuzuncu', '30th': 'Otuzuncu', '31st': 'Otuz birinci'
+# --- RENK PALETLERİ ---
+COLOR_PALETTES = {
+    'Normal':       {'G': '#00ff00', 'R': '#ff0000', 'Y': '#ffff00', 'B': '#5656ff', 'O': '#ffa500'},
+    'Deuteranope':  {'G': '#ffd700', 'R': '#005ac2', 'Y': '#f0e442', 'B': '#0072b2', 'O': '#e69f00'},
+    'Protanope':    {'G': '#f0e442', 'R': '#0072b2', 'Y': '#e69f00', 'B': '#56b4e9', 'O': '#d55e00'},
+    'Tritanope':    {'G': '#009e73', 'R': '#d55e00', 'Y': '#f0e442', 'B': '#cc79a7', 'O': '#e69f00'}
 }
 
-ORDINALS_EN = {
-    '1st': 'First', '1nd': 'First', '1rd': 'First', '1th': 'First',
-    '2nd': 'Second', '2st': 'Second', '2rd': 'Second', '2th': 'Second',
-    '3rd': 'Third', '3st': 'Third', '3nd': 'Third', '3th': 'Third',
-    '4th': 'Fourth', '5th': 'Fifth', '6th': 'Sixth', '7th': 'Seventh',
-    '8th': 'Eighth', '9th': 'Ninth', '10th': 'Tenth',
-    '11th': 'Eleventh', '11st': 'Eleventh',
-    '12th': 'Twelfth', '12nd': 'Twelfth',
-    '13th': 'Thirteenth', '13rd': 'Thirteenth',
-    '14th': 'Fourteenth', '15th': 'Fifteenth', '16th': 'Sixteenth',
-    '17th': 'Seventeenth', '18th': 'Eighteenth', '19th': 'Nineteenth', '20th': 'Twentieth',
-    '21st': 'Twenty-first', '22nd': 'Twenty-second', '23rd': 'Twenty-third', '24th': 'Twenty-fourth',
-    '25th': 'Twenty-fifth', '26th': 'Twenty-sixth', '27th': 'Twenty-seventh', '28th': 'Twenty-eighth',
-    '29th': 'Twenty-ninth', '30th': 'Thirtieth', '31st': 'Thirty-first'
-}
+# --- YARDIMCI FONKSİYONLAR: 75'e Kadar Sayı Üretimi ---
+def generate_ordinals_tr(limit=75):
+    ones = ["", "Birinci", "İkinci", "Üçüncü", "Dördüncü", "Beşinci", "Altıncı", "Yedinci", "Sekizinci", "Dokuzuncu"]
+    raw_nums = ["", "Bir", "İki", "Üç", "Dört", "Beş", "Altı", "Yedi", "Sekiz", "Dokuz"]
+    tens = ["", "On", "Yirmi", "Otuz", "Kırk", "Elli", "Altmış", "Yetmiş", "Seksen", "Doksan"]
+    
+    mapping = {}
+    for i in range(1, limit + 1):
+        suffix = "th" # Kod içinde genel kullanım için th olarak saklıyoruz, okunuşu Türkçe olacak.
+        if i % 10 == 1 and i != 11: key = f"{i}st"
+        elif i % 10 == 2 and i != 12: key = f"{i}nd"
+        elif i % 10 == 3 and i != 13: key = f"{i}rd"
+        else: key = f"{i}th"
+        
+        # Sadece "th" uzantılı hali de olsun (13th, 54th gibi)
+        # Türkçe okunuş mantığı:
+        if i < 10: text = ones[i]
+        elif i % 10 == 0: text = tens[i//10] + "uncu" if i in [10,30] else (tens[i//10] + "inci" if i in [20,50,70,80] else (tens[i//10] + "ıncı"))
+        else: text = f"{tens[i//10]} {ones[i % 10].lower()}"
+        
+        mapping[key] = text
+        mapping[f"{i}th"] = text # 1st, 2nd, 3rd dışındaki genel kullanım için de ekle
+    return mapping
 
-# --- DİL ---
+def generate_ordinals_en(limit=75):
+    ones = ["", "First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth"]
+    teens = ["Tenth", "Eleventh", "Twelfth", "Thirteenth", "Fourteenth", "Fifteenth", "Sixteenth", "Seventeenth", "Eighteenth", "Nineteenth"]
+    tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+    
+    mapping = {}
+    for i in range(1, limit + 1):
+        if 11 <= (i % 100) <= 13: suffix = "th"
+        else:
+            rem = i % 10
+            if rem == 1: suffix = "st"
+            elif rem == 2: suffix = "nd"
+            elif rem == 3: suffix = "rd"
+            else: suffix = "th"
+        
+        key = f"{i}{suffix}"
+        
+        if i < 10: text = ones[i]
+        elif i < 20: text = teens[i-10]
+        else:
+            if i % 10 == 0: text = tens[i//10][:-1] + "ieth" if tens[i//10].endswith('y') else tens[i//10] + "th"
+            else: text = f"{tens[i//10]}-{ones[i%10].lower()}"
+            
+        mapping[key] = text
+        mapping[f"{i}th"] = text # Genel yakalama için
+    return mapping
+
+ORDINALS_TR_FULL = generate_ordinals_tr(75)
+ORDINALS_EN_FULL = generate_ordinals_en(75)
+
+# Dil Ayarları
 LANGUAGES = {
     'tr': {
         'app_title': f'FestiPath {APP_VERSION}',
@@ -121,6 +147,7 @@ LANGUAGES = {
         'hotkey_lock': 'Kilit (Sürükleme):',
         'hotkey_reset': 'Pencereyi Ortala:',
         'hotkey_tts': 'Sonraki Satır:',
+        'hotkey_sett': 'Ayarlar Menüsü:',
         'tts_enable': 'Sesli Okumayı Aktif Et',
         'auto_read': 'Şarkı Başlayınca Oku',
         'visual_bar_enable': 'Görsel Barı Göster',
@@ -129,8 +156,12 @@ LANGUAGES = {
         'voice_model': 'tr-TR-AhmetNeural',
         'R': 'Kırmızı', 'G': 'Yeşil', 'Y': 'Sarı', 'B': 'Mavi', 'O': 'Turuncu', 
         'NN': 'Sonraki Nota', 'beats': 'Vuruş', 'after': 'Sonra',
-        **{str(i): str(i) for i in range(1, 32)}, 
-        **ORDINALS_TR
+        'color_blind': 'Renk Körü Modu',
+        'Normal': 'Normal', 'Deuteranope': 'Dötenarop (Yeşil)', 'Protanope': 'Protanop (Kırmızı)', 'Tritanope': 'Tritanop (Mavi)',
+        # 1-75 Sayılar ve Ordinal Sayılar
+        **{str(i): str(i) for i in range(1, 76)}, 
+        **{f"+{i}": f"Artı {i}" for i in range(1, 10)},
+        **ORDINALS_TR_FULL
     },
     'en': {
         'app_title': f'FestiPath {APP_VERSION}',
@@ -162,6 +193,7 @@ LANGUAGES = {
         'hotkey_lock': 'Drag Lock:',
         'hotkey_reset': 'Reset Position:',
         'hotkey_tts': 'Next Line:',
+        'hotkey_sett': 'Settings Menu:',
         'tts_enable': 'Enable TTS',
         'auto_read': 'Auto Read on Start',
         'visual_bar_enable': 'Show Visual Bar',
@@ -170,12 +202,15 @@ LANGUAGES = {
         'voice_model': 'en-US-ChristopherNeural',
         'R': 'Red', 'G': 'Green', 'Y': 'Yellow', 'B': 'Blue', 'O': 'Orange', 
         'NN': 'Next Note', 'beats': 'Beats', 'after': 'After',
-        **{str(i): str(i) for i in range(1, 32)},
-        **ORDINALS_EN
+        'color_blind': 'Color Blind Mode',
+        'Normal': 'Normal', 'Deuteranope': 'Deuteranope', 'Protanope': 'Protanope', 'Tritanope': 'Tritanope',
+        # 1-75 Numbers and Ordinals
+        **{str(i): str(i) for i in range(1, 76)},
+        **{f"+{i}": f"Plus {i}" for i in range(1, 10)},
+        **ORDINALS_EN_FULL
     }
 }
 
-COLOR_HEX_MAP = {'G': '#00ff00', 'R': '#ff0000', 'Y': '#ffff00', 'B': '#5656ff', 'O': '#ffa500'}
 INSTRUMENT_MAP = {'Drums': 'd', 'Drum': 'd', 'Bass': 'b', 'Vocals': 'v', 'Vocal': 'v', 'Guitar': 'l', 'Lead': 'l', 'PlasticGuitar': 'g', 'ProGuitar': 'g', 'PlasticBass': 'm', 'ProBass': 'm'}
 DISPLAY_NAME_MAP = {'Guitar': 'Lead', 'Lead': 'Lead', 'PlasticGuitar': 'Pro Guitar', 'ProGuitar': 'Pro Guitar', 'PlasticBass': 'Pro Bass', 'ProBass': 'Pro Bass', 'Bass': 'Bass', 'Drums': 'Drums', 'Drum': 'Drums', 'Vocals': 'Vocals', 'Vocal': 'Vocals'}
 ICON_FILES = {'Lead': 'lead.png', 'Pro Guitar': 'proguitar.png', 'Pro Bass': 'probass.png', 'Bass': 'bass.png', 'Drums': 'drums.png', 'Vocals': 'vocals.png'}
@@ -208,11 +243,13 @@ class ConfigManager:
             'language': 'en', 'x': '50', 'y': '50', 'bar_x': '100', 'bar_y': '100',
             'hotkey_hide': 'F8', 'hotkey_lock': 'F9', 
             'hotkey_reset': 'F7',
+            'hotkey_settings': 'F10',
             'hotkey_tts': 'space', 
             'gamepad_tts_btn': 'NONE',
             'tts_enabled': 'True', 'visual_bar_enabled': 'True', 'visual_bar_popup': 'False',
             'auto_read_first': 'False',
-            'ignored_version': '0.0'
+            'ignored_version': '0.0',
+            'color_blind_mode': 'Normal'
         }
         self.load()
 
@@ -270,7 +307,6 @@ class GamepadManager:
             if hat[1] == -1: return f"HAT:{i}:DOWN"
             if hat[0] == 1: return f"HAT:{i}:RIGHT"
             if hat[0] == -1: return f"HAT:{i}:LEFT"
-        # AXIS İPTAL EDİLDİ
         return None
 
     def check_specific_input(self, input_code):
@@ -309,9 +345,13 @@ class EdgeTTSManager:
         asyncio.set_event_loop(loop)
         
         needed_words = ['R', 'G', 'Y', 'B', 'O', 'NN', 'beats', 'after']
-        # 31 Dahil olacak şekilde
-        needed_words.extend([str(i) for i in range(1, 32)]) 
-        ords = ORDINALS_TR if self.lang == 'tr' else ORDINALS_EN
+        # 1-75 arası sayılar
+        needed_words.extend([str(i) for i in range(1, 76)])
+        # +1, +2 ... +9 ifadeleri
+        needed_words.extend([f"+{i}" for i in range(1, 10)])
+        
+        # Ordinal listesi (1st, 2nd... 75th)
+        ords = ORDINALS_TR_FULL if self.lang == 'tr' else ORDINALS_EN_FULL
         needed_words.extend(list(ords.keys()))
 
         download_queue = []
@@ -331,7 +371,7 @@ class EdgeTTSManager:
     async def download_files(self, queue):
         for text, path in queue:
             try:
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.3)
                 communicate = edge_tts.Communicate(text, self.voice)
                 await communicate.save(path)
             except: 
@@ -350,27 +390,56 @@ class EdgeTTSManager:
         threading.Thread(target=self._play_thread, args=(text_line,), daemon=True).start()
 
     def _play_thread(self, text_line):
-        clean_text = text_line.replace("/", " ")
-        words = clean_text.split()
+        # --- FIX: Parantez içindeki +sayı ifadelerini ayıkla ---
+        # Örnek: "4(+1)/54th RB" -> "4 +1 54th RB"
+        clean_line = re.sub(r'\(\+(\d+)\)', r' +\1 ', text_line)
+        clean_line = clean_line.replace('/', ' ')
+        
+        words = clean_line.split()
         tokens = []
         for w in words:
             w = w.strip()
             if not w: continue
-            if any(x in w for x in ['st', 'nd', 'rd', 'th']):
-                if w in LANGUAGES[self.lang]: tokens.append(w); continue
-            if w.isdigit():
-                if 1 <= int(w) <= 31: tokens.append(w)
+            
+            # +1, +2 kontrolü
+            if w.startswith('+') and w[1:].isdigit():
+                tokens.append(w)
                 continue
+            
+            # Ordinal kontrolü (st, nd, rd, th)
+            # FIX: 1/54th -> 54th olarak listede varsa oku
+            if any(x in w for x in ['st', 'nd', 'rd', 'th']):
+                # Eğer tam eşleşme varsa (örn: 54th)
+                if w in LANGUAGES[self.lang]:
+                    tokens.append(w)
+                    continue
+                # Eşleşme yoksa (belki 11st yazıldı yanlışlıkla), sayıyı ayıkla
+                # Sayıyı ayıkla, eğer 1-75 arasındaysa ve sonu ordinal ise
+                num_part = ''.join(filter(str.isdigit, w))
+                if num_part and 1 <= int(num_part) <= 75:
+                    # En yakın uygun key'i bulmaya çalış (örn: 54 -> 54th)
+                    candidate = f"{num_part}th"
+                    if candidate in LANGUAGES[self.lang]:
+                         tokens.append(candidate)
+                         continue
+
+            # Düz Sayı kontrolü (1-75)
+            if w.isdigit():
+                if 1 <= int(w) <= 75: tokens.append(w)
+                continue
+            
             w_lower = w.lower()
             if w_lower in ['beats', 'after']: tokens.append(w_lower); continue
             if "NN" in w: tokens.append("NN"); continue
+            
+            # Renk Notları (R, G, B...)
             for char in w:
                 if char in ['R', 'G', 'Y', 'B', 'O']: tokens.append(char)
 
         for token in tokens:
             if token in self.sounds:
                 self.sounds[token].play()
-                if any(x in token for x in ['st', 'nd', 'rd', 'th']) or token == "NN" or token in ['beats', 'after']:
+                if any(x in token for x in ['st', 'nd', 'rd', 'th']) or token == "NN" or token.startswith('+'):
                     time.sleep(0.6)
                 else:
                     time.sleep(0.4)
@@ -384,7 +453,7 @@ class SettingsWindow(tk.Toplevel):
         self.gamepad_mgr = gamepad_mgr
         
         self.title(self.lang['settings'])
-        self.geometry("580x420") 
+        self.geometry("580x480") 
         self.resizable(False, False)
         self.configure(bg="#2b2b2b")
         self.attributes('-topmost', True)
@@ -430,6 +499,14 @@ class SettingsWindow(tk.Toplevel):
         tk.Checkbutton(grp_win, text=self.lang['bg_visible'], variable=self.bgv, command=self.on_change, 
                       bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=5, pady=5)
 
+        # --- RENK KÖRÜ MODU SEÇİMİ ---
+        f3 = tk.Frame(grp_win, bg="#2b2b2b"); f3.pack(fill='x', padx=5, pady=5)
+        tk.Label(f3, text=self.lang['color_blind'], bg="#2b2b2b", fg="white", width=15, anchor='w').pack(side='left')
+        self.cb_mode = ttk.Combobox(f3, values=["Normal", "Deuteranope", "Protanope", "Tritanope"], state="readonly", width=20)
+        self.cb_mode.set(self.config.get('color_blind_mode'))
+        self.cb_mode.pack(side='left', padx=5)
+        self.cb_mode.bind("<<ComboboxSelected>>", self.on_change)
+
         grp_bar = ttk.LabelFrame(self.tab_visual, text=self.lang['grp_bar'])
         grp_bar.pack(fill='x', padx=10, pady=5)
 
@@ -448,7 +525,8 @@ class SettingsWindow(tk.Toplevel):
         self.create_hk_row(frame, 0, self.lang['hotkey_hide'], 'hotkey_hide')
         self.create_hk_row(frame, 1, self.lang['hotkey_lock'], 'hotkey_lock')
         self.create_hk_row(frame, 2, self.lang['hotkey_reset'], 'hotkey_reset')
-        self.create_hk_row(frame, 3, self.lang['hotkey_tts'], 'hotkey_tts', is_gamepad_capable=True)
+        self.create_hk_row(frame, 3, self.lang['hotkey_sett'], 'hotkey_settings')
+        self.create_hk_row(frame, 4, self.lang['hotkey_tts'], 'hotkey_tts', is_gamepad_capable=True)
 
     def create_hk_row(self, parent, row, txt, k, is_gamepad_capable=False):
         tk.Label(parent, text=txt, bg="#2b2b2b", fg="white", font=("Segoe UI", 10), anchor='e').grid(row=row, column=0, padx=10, pady=10, sticky='e')
@@ -551,6 +629,7 @@ class SettingsWindow(tk.Toplevel):
             self.config.set('visual_bar_enabled', self.barv.get())
             self.config.set('visual_bar_popup', self.popv.get())
             self.config.set('language', self.lang_var.get())
+            self.config.set('color_blind_mode', self.cb_mode.get())
             self.update_callback()
         except: pass
 
@@ -570,9 +649,14 @@ class VisualBar:
             if parent:
                 self.docked = tk.Frame(parent, bg="black", height=30); self.docked.pack(side='top', fill='x', pady=(0, 5)); self.docked.pack_propagate(False)
                 self.canvas = tk.Canvas(self.docked, bg="black", highlightthickness=0); self.canvas.pack(fill='both', expand=True)
+        # Mevcut renklerle yeniden çiz
         self.draw(self.cols)
-    def update(self, txt):
-        self.cols = [COLOR_HEX_MAP[c] for c in txt if c in COLOR_HEX_MAP]; self.draw(self.cols)
+
+    def update(self, txt, color_map):
+        # Renk haritasına göre hex kodlarını bul
+        self.cols = [color_map[c] for c in txt if c in color_map]
+        self.draw(self.cols)
+
     def draw(self, cols):
         if not self.canvas: return
         self.canvas.delete("all")
@@ -582,7 +666,8 @@ class VisualBar:
         if w <= 1: w = 300 
         if h <= 1: h = 40
         bw = w/len(cols)
-        for i, c in enumerate(cols): self.canvas.create_rectangle(i*bw, 0, (i+1)*bw, h, fill=c, outline="")
+        for i, c in enumerate(cols): 
+            self.canvas.create_rectangle(i*bw, 0, (i+1)*bw + 1, h, fill=c, outline="")
     def destroy(self):
         if self.popup: self.popup.destroy(); self.popup = None
         if self.docked: self.docked.destroy(); self.docked = None
@@ -602,36 +687,29 @@ class UpdatePopup(tk.Toplevel):
         self.version_tag = version_data.get('version', 'v0.0')
         self.download_url = version_data.get('url', LINK_GITHUB)
         
-        # JSON'dan gelen notlar
         self.notes_tr = version_data.get('notes_tr', [])
         self.notes_en = version_data.get('notes_en', [])
 
-        # Pencere Başlığı (Dinamik)
         self.title(self.lang['update_available'])
-        self.geometry("520x480") # Pencere biraz daha büyütüldü
+        self.geometry("520x480") 
         self.configure(bg="#202020")
         self.attributes('-topmost', True)
         self.resizable(False, False)
 
-        # --- 1. BAŞLIK (EN ÜST) ---
         header_frame = tk.Frame(self, bg="#202020")
         header_frame.pack(side='top', fill='x', pady=(20, 10))
         
-        # Başlık metni artık dilden geliyor (LANGUAGES içinden)
         tk.Label(header_frame, text=self.lang['update_available'], font=("Segoe UI", 16, "bold"), fg="#00b894", bg="#202020").pack()
         tk.Label(header_frame, text=f"Version: {self.version_tag}", font=("Consolas", 10), fg="#b2bec3", bg="#202020").pack()
 
-        # --- 2. ALT BUTONLAR (EN ALT - Sabitlensin diye önce bunu paketliyoruz) ---
         bottom_frame = tk.Frame(self, bg="#202020")
         bottom_frame.pack(side='bottom', fill='x', pady=15)
 
-        # "Tekrar Gösterme" Kutucuğu
         self.dont_show = tk.BooleanVar()
         cb = tk.Checkbutton(bottom_frame, text=self.lang['dont_show_again'], variable=self.dont_show, 
                            bg="#202020", fg="#dfe6e9", selectcolor="#202020", activebackground="#202020", font=("Segoe UI", 9))
         cb.pack(side='top', pady=(0, 10))
 
-        # Butonlar
         btn_container = tk.Frame(bottom_frame, bg="#202020")
         btn_container.pack(side='top')
 
@@ -641,7 +719,6 @@ class UpdatePopup(tk.Toplevel):
         tk.Button(btn_container, text="Kapat / Close", bg="#d63031", fg="white", font=("Segoe UI", 10, "bold"), 
                  command=self.close_win, width=18, relief="flat", pady=5, cursor="hand2").pack(side='left', padx=10)
 
-        # --- 3. SEKMELER (ORTA - Kalan alanı kaplasın) ---
         style = ttk.Style()
         style.theme_use('clam')
         style.configure('TNotebook', background='#202020', borderwidth=0)
@@ -651,22 +728,18 @@ class UpdatePopup(tk.Toplevel):
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(side='top', fill='both', expand=True, padx=20, pady=5)
 
-        # Türkçe Sekmesi
         self.frame_tr = tk.Frame(self.notebook, bg="#2d3436")
         self.create_notes_view(self.frame_tr, self.notes_tr)
         self.notebook.add(self.frame_tr, text="🇹🇷 Türkçe")
 
-        # İngilizce Sekmesi
         self.frame_en = tk.Frame(self.notebook, bg="#2d3436")
         self.create_notes_view(self.frame_en, self.notes_en)
         self.notebook.add(self.frame_en, text="🇺🇸 English")
         
-        # Eğer program dili İngilizce ise, İngilizce sekmesini aç
         if self.config.get('language') == 'en':
             self.notebook.select(1)
 
     def create_notes_view(self, parent, notes_list):
-        # Scrollbar eklendi (Metin uzunsa butonları itmesin diye)
         txt_frame = tk.Frame(parent, bg="#2d3436")
         txt_frame.pack(fill='both', expand=True)
 
@@ -692,11 +765,10 @@ class UpdatePopup(tk.Toplevel):
 
     def insert_formatted_note(self, widget, text):
         widget.insert('end', "• ", "bullet")
-        # Markdown benzeri **bold** parsing
         parts = re.split(r'(\*\*.*?\*\*)', text)
         for part in parts:
             if part.startswith('**') and part.endswith('**'):
-                clean_text = part[2:-2] # Yıldızları temizle
+                clean_text = part[2:-2]
                 widget.insert('end', clean_text, ("bold", "bullet"))
             else:
                 widget.insert('end', part, "bullet")
@@ -715,20 +787,26 @@ class FestivalPathOverlay:
     def __init__(self, root):
         self.root = root
         
-        # --- İKON VE PENCERE AYARI (Buraya eklendi) ---
         try:
-            # EXE içine gömülen ikonu bulur ve pencereye basar
             icon_path = resource_path('app_icon.ico')
             self.root.iconbitmap(icon_path)
         except:
-            pass # İkon dosyası klasörde yoksa hata vermez, varsayılanla devam eder
+            pass
 
         # --- DEĞİŞKENLER ---
         self.cfg = ConfigManager()
-        self.last_trigger_time = 0  # Çift ses okumasını engelleyen kilit (Buraya eklendi)
+        self.last_trigger_time = 0
+        self.auto_read_timer = None 
+        
         self.lang = self.cfg.get('language')
         self.L = LANGUAGES[self.lang]
         
+        # Seçili Renk Paleti (Varsayılan Normal)
+        self.current_colors = COLOR_PALETTES['Normal']
+
+        # Son okunan satırı tutmak için
+        self.current_line_text = "" 
+
         # --- PENCERE AYARLARI ---
         self.root.title(self.L['app_title'])
         self.root.overrideredirect(True)
@@ -768,7 +846,7 @@ class FestivalPathOverlay:
         self.menu.add_separator(); self.menu.add_command(label=self.L['close'], command=self.close)
         self.root.bind("<Button-3>", lambda e: self.menu.post(e.x_root, e.y_root))
 
-        self.setup_tags(); self.apply(); self.binds(self.root); self.hk()
+        self.apply(); self.binds(self.root); self.hk()
         for t in [self.fetch, self.log, self.upd_chk]: threading.Thread(target=t, daemon=True).start()
         
         self.poll_gamepad()
@@ -793,7 +871,7 @@ class FestivalPathOverlay:
     def hk(self):
         try:
             keyboard.unhook_all()
-            for k, f in [('hotkey_hide', self.tog), ('hotkey_lock', self.lck), ('hotkey_reset', self.reset_pos), ('hotkey_tts', self.nxt)]:
+            for k, f in [('hotkey_hide', self.tog), ('hotkey_lock', self.lck), ('hotkey_reset', self.reset_pos), ('hotkey_tts', self.nxt), ('hotkey_settings', self.sett)]:
                 v = self.cfg.get(k); 
                 if v and v != 'NONE': keyboard.add_hotkey(v, f)
         except: pass
@@ -819,8 +897,10 @@ class FestivalPathOverlay:
     def nxt(self):
         if self.vis_on and self.sid and self.lidx < len(self.lines):
             l = self.lines[self.lidx]
+            self.current_line_text = l # Kaydet
             if self.cfg.get('tts_enabled')=='True': self.tts.play_sequence(l)
-            self.vis.update(l); self.lidx+=1
+            # Dinamik Renk Haritasını VisualBar'a Gönder
+            self.vis.update(l, self.current_colors); self.lidx+=1
     def tog(self): 
         self.vis_on = not self.vis_on
         if self.vis_on: self.root.deiconify(); self.vis.set_visibility(True)
@@ -837,8 +917,15 @@ class FestivalPathOverlay:
         self.root.geometry(f"480x{h}+{self.root.winfo_x()}+{self.root.winfo_y()}")
 
     def apply(self):
+        # Dil Ayarı
         l = self.cfg.get('language')
         if l != self.lang: self.lang=l; self.L=LANGUAGES[l]; self.lbl_ti.config(text=self.L['ready']); self.tts=EdgeTTSManager(l)
+        
+        # Renk Körü Modu Ayarı
+        mode = self.cfg.get('color_blind_mode')
+        self.current_colors = COLOR_PALETTES.get(mode, COLOR_PALETTES['Normal'])
+
+        # Font ve Pencere
         self.txt.config(font=("Consolas", self.cfg.get('font_size', int), "bold"))
         self.vis.setup(self.main); self.root.attributes('-alpha', self.cfg.get('opacity', float))
         bg = self.cols['panel'] if self.cfg.get('bg_visible')=='True' else '#000001'
@@ -851,13 +938,27 @@ class FestivalPathOverlay:
                     if c!=self.lbl_sc and c!=self.lbl_up: c.config(bg=bg)
                 except: pass
         self.hk(); self.root.after(100, self.resize)
+        
+        # Tagleri Güncelle
+        self.setup_tags()
+        
+        # Visual Bar'ı mevcut satır ve yeni renklerle güncelle (FIX)
+        if self.current_line_text:
+            self.vis.update(self.current_line_text, self.current_colors)
 
     def sett(self): 
-        if self.settings_window and self.settings_window.winfo_exists(): self.settings_window.lift()
-        else: self.settings_window = SettingsWindow(self.root, self.cfg, self.apply, self.L, self.gamepad)
+        # Toggle Mantığı: Açıksa kapat, kapalıysa aç
+        if self.settings_window and self.settings_window.winfo_exists():
+            self.settings_window.destroy()
+            self.settings_window = None
+        else:
+            self.settings_window = SettingsWindow(self.root, self.cfg, self.apply, self.L, self.gamepad)
+
     def setup_tags(self):
-        for c, h in {'R':'#ff4757','G':'#2ed573','Y':'#ffa502','B':'#1e90ff','O':'#e67e22','W':'#f1f2f6'}.items():
-            self.txt.tag_config(c, foreground=h)
+        # Mevcut renk paletine göre tag renklerini güncelle
+        for char_code, hex_color in self.current_colors.items():
+            self.txt.tag_config(char_code, foreground=hex_color)
+        self.txt.tag_config('W', foreground='#f1f2f6') # Beyaz (White) sabittir
 
     def fetch(self):
         try: self.map = json.loads(requests.get(MAPPING_URL).text)
@@ -896,8 +997,14 @@ class FestivalPathOverlay:
         elif 'SparksSong:' in l:
             try: self.sid = l.split('SparksSong:')[1].strip(); self.trig()
             except: pass
+        
         m = re.search(r"TrackType::Track(\w+)", l)
-        if m and m.group(1)!="Type" and m.group(1)!=self.inst: self.inst=m.group(1); self.trig()
+        if m:
+            found_inst = m.group(1)
+            # Eğer bulunan enstrüman "Events", "Type", "Section" ise yoksay
+            if found_inst not in ["Type", "Events", "Section"] and found_inst != self.inst:
+                self.inst = found_inst
+                self.trig()
 
     def trig(self):
         if not self.sid: return
@@ -922,7 +1029,10 @@ class FestivalPathOverlay:
         
         self.lbl_sc.config(text=f"{int(scr.group(1)):,}" if scr else "0")
         
-        self.txt.config(state='normal'); self.txt.delete("1.0",'end'); self.lines=[]; self.lidx=0; self.vis.update("")
+        self.txt.config(state='normal'); self.txt.delete("1.0",'end'); self.lines=[]; self.lidx=0; 
+        self.current_line_text = "" # Reset
+        self.vis.update("", self.current_colors)
+        
         if pth:
             raw = pth.group(1).replace(", ", "\n").replace(",", "\n")
             for l in raw.split('\n'):
@@ -931,7 +1041,10 @@ class FestivalPathOverlay:
                 if re.search(r'[RGBYO]|NN', l): self.lines.append(l.strip())
             
             if self.cfg.get('auto_read_first') == 'True':
-                self.root.after(500, self.nxt) 
+                if self.auto_read_timer:
+                    self.root.after_cancel(self.auto_read_timer)
+                    self.auto_read_timer = None
+                self.auto_read_timer = self.root.after(2500, self.nxt) 
         else: self.txt.insert('end', self.L['path_not_found'], "W")
         self.txt.config(state='disabled'); self.root.after(100, self.resize)
 
