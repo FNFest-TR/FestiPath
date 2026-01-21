@@ -1,18 +1,18 @@
 {
-  "version": "v2.0",
+  "version": "v2.1",
   "url": "https://github.com/FNFest-TR/FestiPath/releases/latest",
   "notes_tr": [
-    "**MODERN ARAYÜZ (v2.0):** Ayarlar ve Güncelleme ekranları tamamen yenilendi. Artık sekmeli, yatay ve çok daha okunaklı bir tasarıma sahip.",
-    "**GAMEPAD DRIFT ÇÖZÜMÜ:** Analog çubuklar (Axis) ve hassas tetikler tamamen devre dışı bırakıldı. Sadece tuşlar algılanıyor, böylece yanlış okumalar (drift) tarih oldu.",
-    "**AKILLI OTOMASYON:** Şarkı başladığında ilk yolu/notayı sistem otomatik okur (Ayarlardan açıp kapatabilirsiniz).",
-    "**GENİŞLETİLMİŞ SES:** Ses motoru artık 31. yola kadar (31st) tüm sıraları kusursuz seslendiriyor.",
-    "**PENCEREYİ KURTAR:** Overlay ekran dışına taşarsa 'F7' tuşu ile anında merkeze geri çağırabilirsiniz."
+    "**RENK KÖRÜ DESTEĞİ:** Erişilebilirlik için Normal, Dötenarop, Protanop ve Tritanop renk modları eklendi.",
+    "**GELİŞMİŞ TTS MOTORU:** Sayı desteği 75'e kadar (75th) yükseltildi. Artık '4(+1)' gibi ifadeler 'Dört Artı Bir' şeklinde, '54th' gibi ara sayılar ise hatasız okunuyor.",
+    "**KARARLILIK GÜNCELLEMESİ:** Şarkı başlarken oluşan çift okuma (double reading) ve seslerin üst üste binmesi sorunu akıllı zamanlayıcı ile çözüldü.",
+    "**GÖRSEL BAR İYİLEŞTİRMESİ:** Görsel bar üzerindeki siyah çizgi boşlukları kapatıldı ve renk geçişleri anlık hale getirildi.",
+    "**YENİ KISAYOL:** Ayarlar menüsünü hızlıca açıp kapatmak için 'F10' tuşu atandı."
   ],
   "notes_en": [
-    "**MODERN UI (v2.0):** Settings and Update screens have been completely overhauled. Now features a tabbed, horizontal, and much cleaner design.",
-    "**GAMEPAD DRIFT FIX:** Analog sticks (Axis) and sensitive triggers are completely disabled. Only digital buttons are registered to prevent ghost inputs.",
-    "**SMART AUTOMATION:** System auto-reads the first path/note when the song starts (Toggle in settings).",
-    "**EXTENDED AUDIO:** TTS engine now flawlessly supports reading up to the 31st ordinal path.",
-    "**RESCUE WINDOW:** Press 'F7' to instantly center the window if it goes off-screen."
+    "**COLOR BLIND SUPPORT:** Added Normal, Deuteranope, Protanope, and Tritanope modes for better accessibility.",
+    "**ENHANCED TTS ENGINE:** Number support extended up to 75th. Complex patterns like '4(+1)' (Four Plus One) and '54th' are now read flawlessly.",
+    "**STABILITY UPDATE:** Fixed the 'double reading' issue where audio would overlap at the start of a song.",
+    "**VISUAL BAR FIX:** Eliminated black gap lines on the visual bar and enabled instant color updates when changing modes.",
+    "**NEW HOTKEY:** Added 'F10' hotkey to quickly toggle the Settings menu."
   ]
 }
