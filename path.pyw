@@ -11,10 +11,16 @@ import json
 import keyboard
 import webbrowser
 import base64
-import asyncio
-import edge_tts
 import warnings
-import math
+import io
+
+# --- HARİCİ KÜTÜPHANELER ---
+# Bu sürüm Google Translate altyapısı için gTTS kullanır.
+try:
+    from gtts import gTTS
+except ImportError:
+    messagebox.showerror("Eksik Kütüphane", "Lütfen 'gTTS' kütüphanesini yükleyin.\nKomut: pip install gTTS")
+    sys.exit()
 
 # --- SİSTEM AYARLARI ---
 warnings.filterwarnings("ignore")
@@ -22,7 +28,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
 # --- SABİTLER ---
-APP_VERSION = "v2.1"
+APP_VERSION = "v2.4"
 REPO_OWNER = "FNFest-TR"
 REPO_NAME = "FestiPath"
 DEVELOPER_NAME = "ekicionur"
@@ -39,7 +45,6 @@ else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def resource_path(relative_path):
-    """ EXE içine gömülen dosyalara erişmek için geçici yolu bulur """
     try:
         base_path = sys._MEIPASS
     except Exception:
@@ -50,7 +55,6 @@ LOG_PATH = os.path.expandvars(r'%localappdata%\FortniteGame\Saved\Logs\FortniteG
 DATA_URL = "https://fnfpaths.github.io/fnfp.js"
 MAPPING_URL = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/main/song_id.json"
 IMG_BASE_URL = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/main/img/"
-CACHE_DIR = os.path.join(BASE_DIR, 'tts_cache')
 CONFIG_FILE = os.path.join(BASE_DIR, 'config.ini')
 
 # --- RENK PALETLERİ ---
@@ -60,60 +64,6 @@ COLOR_PALETTES = {
     'Protanope':    {'G': '#f0e442', 'R': '#0072b2', 'Y': '#e69f00', 'B': '#56b4e9', 'O': '#d55e00'},
     'Tritanope':    {'G': '#009e73', 'R': '#d55e00', 'Y': '#f0e442', 'B': '#cc79a7', 'O': '#e69f00'}
 }
-
-# --- YARDIMCI FONKSİYONLAR: 75'e Kadar Sayı Üretimi ---
-def generate_ordinals_tr(limit=75):
-    ones = ["", "Birinci", "İkinci", "Üçüncü", "Dördüncü", "Beşinci", "Altıncı", "Yedinci", "Sekizinci", "Dokuzuncu"]
-    raw_nums = ["", "Bir", "İki", "Üç", "Dört", "Beş", "Altı", "Yedi", "Sekiz", "Dokuz"]
-    tens = ["", "On", "Yirmi", "Otuz", "Kırk", "Elli", "Altmış", "Yetmiş", "Seksen", "Doksan"]
-    
-    mapping = {}
-    for i in range(1, limit + 1):
-        suffix = "th" # Kod içinde genel kullanım için th olarak saklıyoruz, okunuşu Türkçe olacak.
-        if i % 10 == 1 and i != 11: key = f"{i}st"
-        elif i % 10 == 2 and i != 12: key = f"{i}nd"
-        elif i % 10 == 3 and i != 13: key = f"{i}rd"
-        else: key = f"{i}th"
-        
-        # Sadece "th" uzantılı hali de olsun (13th, 54th gibi)
-        # Türkçe okunuş mantığı:
-        if i < 10: text = ones[i]
-        elif i % 10 == 0: text = tens[i//10] + "uncu" if i in [10,30] else (tens[i//10] + "inci" if i in [20,50,70,80] else (tens[i//10] + "ıncı"))
-        else: text = f"{tens[i//10]} {ones[i % 10].lower()}"
-        
-        mapping[key] = text
-        mapping[f"{i}th"] = text # 1st, 2nd, 3rd dışındaki genel kullanım için de ekle
-    return mapping
-
-def generate_ordinals_en(limit=75):
-    ones = ["", "First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth"]
-    teens = ["Tenth", "Eleventh", "Twelfth", "Thirteenth", "Fourteenth", "Fifteenth", "Sixteenth", "Seventeenth", "Eighteenth", "Nineteenth"]
-    tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
-    
-    mapping = {}
-    for i in range(1, limit + 1):
-        if 11 <= (i % 100) <= 13: suffix = "th"
-        else:
-            rem = i % 10
-            if rem == 1: suffix = "st"
-            elif rem == 2: suffix = "nd"
-            elif rem == 3: suffix = "rd"
-            else: suffix = "th"
-        
-        key = f"{i}{suffix}"
-        
-        if i < 10: text = ones[i]
-        elif i < 20: text = teens[i-10]
-        else:
-            if i % 10 == 0: text = tens[i//10][:-1] + "ieth" if tens[i//10].endswith('y') else tens[i//10] + "th"
-            else: text = f"{tens[i//10]}-{ones[i%10].lower()}"
-            
-        mapping[key] = text
-        mapping[f"{i}th"] = text # Genel yakalama için
-    return mapping
-
-ORDINALS_TR_FULL = generate_ordinals_tr(75)
-ORDINALS_EN_FULL = generate_ordinals_en(75)
 
 # Dil Ayarları
 LANGUAGES = {
@@ -126,10 +76,11 @@ LANGUAGES = {
         'tab_hotkeys': 'Kısayollar',
         'tab_system': 'Genel',
         'grp_window': 'Pencere & Font',
-        'grp_bar': 'Görsel Bar',
+        'grp_bar': 'Görsel Bar & Popup',
         'grp_lang': 'Dil / Language',
-        'grp_tts': 'Sesli Okuma (TTS)',
-        'font_size': 'Font Boyutu',
+        'grp_tts': 'Sesli Okuma (Google Translate)',
+        'font_size': 'Ana Font Boyutu',
+        'popup_font_size': 'Popup Font Boyutu',
         'opacity': 'Şeffaflık',
         'bg_visible': 'Arka Planı Göster',
         'language': 'Dil / Language',
@@ -150,18 +101,15 @@ LANGUAGES = {
         'hotkey_sett': 'Ayarlar Menüsü:',
         'tts_enable': 'Sesli Okumayı Aktif Et',
         'auto_read': 'Şarkı Başlayınca Oku',
-        'visual_bar_enable': 'Görsel Barı Göster',
-        'visual_bar_popup': 'Popup Modu (Ayrı Pencere)',
+        'visual_bar_enable': 'Renk Barını Göster (Mevcut)',
+        'visual_bar_popup': 'Renk Barı (Ayrı Pencere)',
+        'current_line_popup_enable': 'Satır Okuma Popup\'ı Göster (Renkli)',
         'hotkey_waiting': 'Tuşa Basın...',
-        'voice_model': 'tr-TR-AhmetNeural',
-        'R': 'Kırmızı', 'G': 'Yeşil', 'Y': 'Sarı', 'B': 'Mavi', 'O': 'Turuncu', 
-        'NN': 'Sonraki Nota', 'beats': 'Vuruş', 'after': 'Sonra',
+        'gt_lang': 'tr', # Google Translate Kodu
         'color_blind': 'Renk Körü Modu',
         'Normal': 'Normal', 'Deuteranope': 'Dötenarop (Yeşil)', 'Protanope': 'Protanop (Kırmızı)', 'Tritanope': 'Tritanop (Mavi)',
-        # 1-75 Sayılar ve Ordinal Sayılar
-        **{str(i): str(i) for i in range(1, 76)}, 
-        **{f"+{i}": f"Artı {i}" for i in range(1, 10)},
-        **ORDINALS_TR_FULL
+        # OKUNUŞLAR (Google Translate'e gönderilecek kelimeler)
+        'R': 'Kırmızı', 'G': 'Yeşil', 'Y': 'Sarı', 'B': 'Mavi', 'O': 'Turuncu', 'NN': 'Sonraki Nota'
     },
     'en': {
         'app_title': f'FestiPath {APP_VERSION}',
@@ -172,10 +120,11 @@ LANGUAGES = {
         'tab_hotkeys': 'Hotkeys',
         'tab_system': 'General',
         'grp_window': 'Window & Font',
-        'grp_bar': 'Visual Bar',
+        'grp_bar': 'Visual Bar & Popup',
         'grp_lang': 'Language',
-        'grp_tts': 'Text-to-Speech',
-        'font_size': 'Font Size',
+        'grp_tts': 'Text-to-Speech (Google Translate)',
+        'font_size': 'Main Font Size',
+        'popup_font_size': 'Popup Font Size',
         'opacity': 'Opacity',
         'bg_visible': 'Show Background',
         'language': 'Language',
@@ -196,18 +145,15 @@ LANGUAGES = {
         'hotkey_sett': 'Settings Menu:',
         'tts_enable': 'Enable TTS',
         'auto_read': 'Auto Read on Start',
-        'visual_bar_enable': 'Show Visual Bar',
-        'visual_bar_popup': 'Popup Mode (Detached)',
+        'visual_bar_enable': 'Show Color Bar (Current)',
+        'visual_bar_popup': 'Color Bar Popup (Detached)',
+        'current_line_popup_enable': 'Show Line Reader Popup (Colored)',
         'hotkey_waiting': 'Press Key...',
-        'voice_model': 'en-US-ChristopherNeural',
-        'R': 'Red', 'G': 'Green', 'Y': 'Yellow', 'B': 'Blue', 'O': 'Orange', 
-        'NN': 'Next Note', 'beats': 'Beats', 'after': 'After',
+        'gt_lang': 'en', # Google Translate Code
         'color_blind': 'Color Blind Mode',
         'Normal': 'Normal', 'Deuteranope': 'Deuteranope', 'Protanope': 'Protanope', 'Tritanope': 'Tritanope',
-        # 1-75 Numbers and Ordinals
-        **{str(i): str(i) for i in range(1, 76)},
-        **{f"+{i}": f"Plus {i}" for i in range(1, 10)},
-        **ORDINALS_EN_FULL
+        # PRONUNCIATIONS (Words to send to Google Translate)
+        'R': 'Red', 'G': 'Green', 'Y': 'Yellow', 'B': 'Blue', 'O': 'Orange', 'NN': 'Next Note'
     }
 }
 
@@ -239,14 +185,18 @@ class ConfigManager:
     def __init__(self):
         self.config = configparser.ConfigParser()
         self.defaults = {
-            'font_size': '16', 'opacity': '0.9', 'bg_visible': 'True',
+            'font_size': '16', 'popup_font_size': '20', 
+            'opacity': '0.9', 'bg_visible': 'True',
             'language': 'en', 'x': '50', 'y': '50', 'bar_x': '100', 'bar_y': '100',
+            'popup_x': '200', 'popup_y': '200',
             'hotkey_hide': 'F8', 'hotkey_lock': 'F9', 
             'hotkey_reset': 'F7',
             'hotkey_settings': 'F10',
             'hotkey_tts': 'space', 
             'gamepad_tts_btn': 'NONE',
-            'tts_enabled': 'True', 'visual_bar_enabled': 'True', 'visual_bar_popup': 'False',
+            'tts_enabled': 'True', 
+            'visual_bar_enabled': 'True', 'visual_bar_popup': 'False',
+            'current_line_popup_enabled': 'False',
             'auto_read_first': 'False',
             'ignored_version': '0.0',
             'color_blind_mode': 'Normal'
@@ -283,7 +233,6 @@ class GamepadManager:
         pygame.init()
         pygame.joystick.init()
         self.joystick = None
-        self.DEADZONE = 0.9 
         self.connect_joystick()
 
     def connect_joystick(self):
@@ -328,121 +277,53 @@ class GamepadManager:
         except: pass
         return False
 
-class EdgeTTSManager:
+class GoogleTTSManager:
+    """Google Translate tabanlı, dosya kaydetmeyen (In-Memory) TTS Yöneticisi"""
     def __init__(self, language_code):
         if not pygame.get_init(): pygame.init()
         try: pygame.mixer.init()
         except: pass
+        self.lang_code = language_code
+        self.gt_lang = LANGUAGES[language_code].get('gt_lang', 'en')
+        # Kelime değişim sözlüğünü al (R -> Red, G -> Green vb.)
+        self.vocab = LANGUAGES[language_code]
 
-        self.lang = language_code
-        self.sounds = {}
-        self.voice = LANGUAGES[self.lang]['voice_model']
-        if not os.path.exists(CACHE_DIR): os.makedirs(CACHE_DIR)
-        threading.Thread(target=self.check_and_download_sounds, daemon=True).start()
+    def play_live(self, text_line):
+        """Metni alır, Google'a gönderir, gelen sesi RAM'den çalar."""
+        threading.Thread(target=self._stream_audio, args=(text_line,), daemon=True).start()
 
-    def check_and_download_sounds(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    def _stream_audio(self, text):
+        if not text.strip(): return
         
-        needed_words = ['R', 'G', 'Y', 'B', 'O', 'NN', 'beats', 'after']
-        # 1-75 arası sayılar
-        needed_words.extend([str(i) for i in range(1, 76)])
-        # +1, +2 ... +9 ifadeleri
-        needed_words.extend([f"+{i}" for i in range(1, 10)])
+        # 1. Sembol Temizliği (Parantez, Slash)
+        clean_text = re.sub(r'[()\/]', ' ', text)
         
-        # Ordinal listesi (1st, 2nd... 75th)
-        ords = ORDINALS_TR_FULL if self.lang == 'tr' else ORDINALS_EN_FULL
-        needed_words.extend(list(ords.keys()))
-
-        download_queue = []
-        for code in needed_words:
-            word_text = LANGUAGES[self.lang].get(code, code)
-            file_name = f"{self.lang}_{code}.mp3"
-            file_path = os.path.join(CACHE_DIR, file_name)
-            if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
-                download_queue.append((word_text, file_path))
+        # 2. Renk Kodlarını ve Kısaltmaları Tam Kelimeye Çevir
+        # Örnek: "3 R G" -> "3 Red Green"
+        # Sadece tanımlı anahtarları (R, G, B, Y, O, NN) değiştir.
+        target_keys = ['R', 'G', 'Y', 'B', 'O', 'NN']
         
-        if download_queue:
-            try: loop.run_until_complete(self.download_files(download_queue))
-            except Exception as e: print(f"TTS Error: {e}")
-        loop.close()
-        self.load_sounds_to_memory(needed_words)
+        for key in target_keys:
+            if key in self.vocab:
+                # Boşluk ekleyerek değiştiriyoruz ki kelimeler birbirine yapışmasın
+                # Örn: R -> " Red "
+                replacement = f" {self.vocab[key]} " 
+                clean_text = clean_text.replace(key, replacement)
 
-    async def download_files(self, queue):
-        for text, path in queue:
-            try:
-                await asyncio.sleep(0.3)
-                communicate = edge_tts.Communicate(text, self.voice)
-                await communicate.save(path)
-            except: 
-                if os.path.exists(path): os.remove(path)
-
-    def load_sounds_to_memory(self, codes):
-        time.sleep(1)
-        for code in codes:
-            file_name = f"{self.lang}_{code}.mp3"
-            file_path = os.path.join(CACHE_DIR, file_name)
-            if os.path.exists(file_path) and os.path.getsize(file_path) > 100:
-                try: self.sounds[code] = pygame.mixer.Sound(file_path)
-                except: pass
-
-    def play_sequence(self, text_line):
-        threading.Thread(target=self._play_thread, args=(text_line,), daemon=True).start()
-
-    def _play_thread(self, text_line):
-        # --- FIX: Parantez içindeki +sayı ifadelerini ayıkla ---
-        # Örnek: "4(+1)/54th RB" -> "4 +1 54th RB"
-        clean_line = re.sub(r'\(\+(\d+)\)', r' +\1 ', text_line)
-        clean_line = clean_line.replace('/', ' ')
-        
-        words = clean_line.split()
-        tokens = []
-        for w in words:
-            w = w.strip()
-            if not w: continue
+        try:
+            # gTTS nesnesi oluştur
+            tts = gTTS(text=clean_text, lang=self.gt_lang, slow=False)
             
-            # +1, +2 kontrolü
-            if w.startswith('+') and w[1:].isdigit():
-                tokens.append(w)
-                continue
+            # RAM üzerinde dosya (BytesIO) oluştur
+            fp = io.BytesIO()
+            tts.write_to_fp(fp)
+            fp.seek(0) # Başa sar
             
-            # Ordinal kontrolü (st, nd, rd, th)
-            # FIX: 1/54th -> 54th olarak listede varsa oku
-            if any(x in w for x in ['st', 'nd', 'rd', 'th']):
-                # Eğer tam eşleşme varsa (örn: 54th)
-                if w in LANGUAGES[self.lang]:
-                    tokens.append(w)
-                    continue
-                # Eşleşme yoksa (belki 11st yazıldı yanlışlıkla), sayıyı ayıkla
-                # Sayıyı ayıkla, eğer 1-75 arasındaysa ve sonu ordinal ise
-                num_part = ''.join(filter(str.isdigit, w))
-                if num_part and 1 <= int(num_part) <= 75:
-                    # En yakın uygun key'i bulmaya çalış (örn: 54 -> 54th)
-                    candidate = f"{num_part}th"
-                    if candidate in LANGUAGES[self.lang]:
-                         tokens.append(candidate)
-                         continue
-
-            # Düz Sayı kontrolü (1-75)
-            if w.isdigit():
-                if 1 <= int(w) <= 75: tokens.append(w)
-                continue
-            
-            w_lower = w.lower()
-            if w_lower in ['beats', 'after']: tokens.append(w_lower); continue
-            if "NN" in w: tokens.append("NN"); continue
-            
-            # Renk Notları (R, G, B...)
-            for char in w:
-                if char in ['R', 'G', 'Y', 'B', 'O']: tokens.append(char)
-
-        for token in tokens:
-            if token in self.sounds:
-                self.sounds[token].play()
-                if any(x in token for x in ['st', 'nd', 'rd', 'th']) or token == "NN" or token.startswith('+'):
-                    time.sleep(0.6)
-                else:
-                    time.sleep(0.4)
+            # Pygame ile RAM'den yükle ve çal
+            pygame.mixer.music.load(fp)
+            pygame.mixer.music.play()
+        except Exception as e:
+            print(f"TTS Stream Error: {e}")
 
 class SettingsWindow(tk.Toplevel):
     def __init__(self, parent, config, update_callback, lang_dict, gamepad_mgr):
@@ -453,7 +334,7 @@ class SettingsWindow(tk.Toplevel):
         self.gamepad_mgr = gamepad_mgr
         
         self.title(self.lang['settings'])
-        self.geometry("580x480") 
+        self.geometry("580x550") 
         self.resizable(False, False)
         self.configure(bg="#2b2b2b")
         self.attributes('-topmost', True)
@@ -485,23 +366,25 @@ class SettingsWindow(tk.Toplevel):
         grp_win = ttk.LabelFrame(self.tab_visual, text=self.lang['grp_window'])
         grp_win.pack(fill='x', padx=10, pady=10)
 
+        # Ana Font
         f1 = tk.Frame(grp_win, bg="#2b2b2b"); f1.pack(fill='x', padx=5, pady=5)
-        tk.Label(f1, text=self.lang['font_size'], bg="#2b2b2b", fg="white", width=15, anchor='w').pack(side='left')
-        self.fs = tk.Scale(f1, from_=10, to=30, orient=tk.HORIZONTAL, command=self.on_change, bg="#2b2b2b", fg="white", highlightthickness=0, length=200)
+        tk.Label(f1, text=self.lang['font_size'], bg="#2b2b2b", fg="white", width=20, anchor='w').pack(side='left')
+        self.fs = tk.Scale(f1, from_=10, to=40, orient=tk.HORIZONTAL, command=self.on_change, bg="#2b2b2b", fg="white", highlightthickness=0, length=200)
         self.fs.set(self.config.get('font_size', int)); self.fs.pack(side='left')
 
+        # Opaklık
         f2 = tk.Frame(grp_win, bg="#2b2b2b"); f2.pack(fill='x', padx=5, pady=5)
-        tk.Label(f2, text=self.lang['opacity'], bg="#2b2b2b", fg="white", width=15, anchor='w').pack(side='left')
+        tk.Label(f2, text=self.lang['opacity'], bg="#2b2b2b", fg="white", width=20, anchor='w').pack(side='left')
         self.op = tk.Scale(f2, from_=20, to=100, orient=tk.HORIZONTAL, command=self.on_change, bg="#2b2b2b", fg="white", highlightthickness=0, length=200)
         self.op.set(int(self.config.get('opacity', float)*100)); self.op.pack(side='left')
 
         self.bgv = tk.BooleanVar(value=self.config.get('bg_visible')=='True')
         tk.Checkbutton(grp_win, text=self.lang['bg_visible'], variable=self.bgv, command=self.on_change, 
-                      bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=5, pady=5)
+                       bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=5, pady=5)
 
-        # --- RENK KÖRÜ MODU SEÇİMİ ---
+        # Renk Körü
         f3 = tk.Frame(grp_win, bg="#2b2b2b"); f3.pack(fill='x', padx=5, pady=5)
-        tk.Label(f3, text=self.lang['color_blind'], bg="#2b2b2b", fg="white", width=15, anchor='w').pack(side='left')
+        tk.Label(f3, text=self.lang['color_blind'], bg="#2b2b2b", fg="white", width=20, anchor='w').pack(side='left')
         self.cb_mode = ttk.Combobox(f3, values=["Normal", "Deuteranope", "Protanope", "Tritanope"], state="readonly", width=20)
         self.cb_mode.set(self.config.get('color_blind_mode'))
         self.cb_mode.pack(side='left', padx=5)
@@ -512,11 +395,22 @@ class SettingsWindow(tk.Toplevel):
 
         self.barv = tk.BooleanVar(value=self.config.get('visual_bar_enabled')=='True')
         tk.Checkbutton(grp_bar, text=self.lang['visual_bar_enable'], variable=self.barv, command=self.on_change, 
-                      bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=5, pady=2)
+                       bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=5, pady=2)
         
         self.popv = tk.BooleanVar(value=self.config.get('visual_bar_popup')=='True')
         tk.Checkbutton(grp_bar, text=self.lang['visual_bar_popup'], variable=self.popv, command=self.on_change, 
-                      bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=5, pady=2)
+                       bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=5, pady=2)
+
+        # Popup Checkbox
+        self.nextv = tk.BooleanVar(value=self.config.get('current_line_popup_enabled')=='True')
+        tk.Checkbutton(grp_bar, text=self.lang['current_line_popup_enable'], variable=self.nextv, command=self.on_change,
+                       bg="#2b2b2b", fg="#fab1a0", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=5, pady=2)
+
+        # YENİ: Popup Font Ayarı
+        f_pop = tk.Frame(grp_bar, bg="#2b2b2b"); f_pop.pack(fill='x', padx=5, pady=5)
+        tk.Label(f_pop, text=self.lang['popup_font_size'], bg="#2b2b2b", fg="#fab1a0", width=20, anchor='w').pack(side='left')
+        self.fs_pop = tk.Scale(f_pop, from_=10, to=60, orient=tk.HORIZONTAL, command=self.on_change, bg="#2b2b2b", fg="white", highlightthickness=0, length=200)
+        self.fs_pop.set(self.config.get('popup_font_size', int)); self.fs_pop.pack(side='left')
 
     def setup_hotkeys_tab(self):
         frame = tk.Frame(self.tab_hotkeys, bg="#2b2b2b")
@@ -551,9 +445,9 @@ class SettingsWindow(tk.Toplevel):
         
         self.lang_var = tk.StringVar(value=self.config.get('language'))
         tk.Radiobutton(grp_lang, text="Türkçe", variable=self.lang_var, value="tr", command=self.on_change, 
-                      bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=10, pady=5)
+                       bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=10, pady=5)
         tk.Radiobutton(grp_lang, text="English", variable=self.lang_var, value="en", command=self.on_change, 
-                      bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=10, pady=5)
+                       bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=10, pady=5)
 
         col2 = tk.Frame(self.tab_system, bg="#2b2b2b")
         col2.pack(side='right', fill='both', expand=True, padx=10, pady=10)
@@ -563,11 +457,11 @@ class SettingsWindow(tk.Toplevel):
 
         self.ttsv = tk.BooleanVar(value=self.config.get('tts_enabled')=='True')
         tk.Checkbutton(grp_tts, text=self.lang['tts_enable'], variable=self.ttsv, command=self.on_change, 
-                      bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=10, pady=5)
+                       bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=10, pady=5)
         
         self.autoread_v = tk.BooleanVar(value=self.config.get('auto_read_first')=='True')
         tk.Checkbutton(grp_tts, text=self.lang['auto_read'], variable=self.autoread_v, command=self.on_change, 
-                      bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=10, pady=5)
+                       bg="#2b2b2b", fg="white", selectcolor="#444", activebackground="#2b2b2b").pack(anchor='w', padx=10, pady=5)
 
     def start_listening(self, k, b, is_gamepad_capable):
         b.config(text=self.lang['hotkey_waiting'], bg="#d63031")
@@ -622,12 +516,14 @@ class SettingsWindow(tk.Toplevel):
     def on_change(self, *a):
         try:
             self.config.set('font_size', self.fs.get())
+            self.config.set('popup_font_size', self.fs_pop.get())
             self.config.set('opacity', self.op.get()/100)
             self.config.set('bg_visible', self.bgv.get())
             self.config.set('tts_enabled', self.ttsv.get())
             self.config.set('auto_read_first', self.autoread_v.get())
             self.config.set('visual_bar_enabled', self.barv.get())
             self.config.set('visual_bar_popup', self.popv.get())
+            self.config.set('current_line_popup_enabled', self.nextv.get())
             self.config.set('language', self.lang_var.get())
             self.config.set('color_blind_mode', self.cb_mode.get())
             self.update_callback()
@@ -649,11 +545,9 @@ class VisualBar:
             if parent:
                 self.docked = tk.Frame(parent, bg="black", height=30); self.docked.pack(side='top', fill='x', pady=(0, 5)); self.docked.pack_propagate(False)
                 self.canvas = tk.Canvas(self.docked, bg="black", highlightthickness=0); self.canvas.pack(fill='both', expand=True)
-        # Mevcut renklerle yeniden çiz
         self.draw(self.cols)
 
     def update(self, txt, color_map):
-        # Renk haritasına göre hex kodlarını bul
         self.cols = [color_map[c] for c in txt if c in color_map]
         self.draw(self.cols)
 
@@ -678,6 +572,88 @@ class VisualBar:
         if self.popup: self.popup.geometry(f"+{self.popup.winfo_x()+e.x-self.ox}+{self.popup.winfo_y()+e.y-self.oy}")
     def set_visibility(self, v): 
         if self.popup: self.popup.deiconify() if v else self.popup.withdraw()
+
+class CurrentLinePopup:
+    """O anki satırı renkli gösteren popup"""
+    def __init__(self, root, config):
+        self.root = root
+        self.cfg = config
+        self.popup = None
+        self.txt_widget = None
+        self.ox = 0
+        self.oy = 0
+        self.visible = False
+
+    def setup(self):
+        self.destroy()
+        if self.cfg.get('current_line_popup_enabled') != 'True': 
+            self.visible = False
+            return
+        
+        self.visible = True
+        self.popup = tk.Toplevel(self.root)
+        self.popup.overrideredirect(True)
+        self.popup.attributes('-topmost', True)
+        self.popup.attributes('-alpha', 0.8)
+        self.popup.config(bg='black')
+        
+        x = self.cfg.get('popup_x', int)
+        y = self.cfg.get('popup_y', int)
+        self.popup.geometry(f"400x60+{x}+{y}")
+        
+        # Text Widget kullanımı (Renkli yazı için)
+        font_size = self.cfg.get('popup_font_size', int)
+        self.txt_widget = tk.Text(self.popup, font=("Consolas", font_size, "bold"), bg="black", fg="white", bd=0, height=1)
+        self.txt_widget.pack(fill='both', expand=True)
+        
+        # Event binding (Sürükleme için text widget'a bağla)
+        self.txt_widget.bind("<ButtonPress-1>", self.sm)
+        self.txt_widget.bind("<ButtonRelease-1>", self.em)
+        self.txt_widget.bind("<B1-Motion>", self.mm)
+        
+        self.txt_widget.config(state='disabled', cursor='arrow')
+
+    def update_text(self, text, color_map):
+        if self.popup and self.txt_widget:
+            self.txt_widget.config(state='normal')
+            self.txt_widget.delete("1.0", "end")
+            
+            # Tag konfigürasyonu
+            for char_code, hex_color in color_map.items():
+                self.txt_widget.tag_config(char_code, foreground=hex_color)
+            self.txt_widget.tag_config('W', foreground='#f1f2f6')
+            
+            # Renkli yazdırma mantığı
+            if text:
+                for p in re.split(r'([RGBYO])', text):
+                    tag = p if p in "RGBYO" else "W"
+                    self.txt_widget.insert('end', p, tag)
+            else:
+                self.txt_widget.insert('end', "...", "W")
+            
+            # Ortala ve kapat
+            self.txt_widget.tag_configure("center", justify='center')
+            self.txt_widget.tag_add("center", "1.0", "end")
+            self.txt_widget.config(state='disabled')
+
+    def destroy(self):
+        if self.popup:
+            self.popup.destroy()
+            self.popup = None
+            self.txt_widget = None
+
+    def sm(self, e): self.ox, self.oy = e.x, e.y
+    def em(self, e): 
+        if self.popup: 
+            self.cfg.set('popup_x', self.popup.winfo_x())
+            self.cfg.set('popup_y', self.popup.winfo_y())
+    def mm(self, e): 
+        if self.popup: 
+            self.popup.geometry(f"+{self.popup.winfo_x()+e.x-self.ox}+{self.popup.winfo_y()+e.y-self.oy}")
+    def set_visibility(self, v):
+        if self.popup:
+            if v and self.cfg.get('current_line_popup_enabled') == 'True': self.popup.deiconify()
+            else: self.popup.withdraw()
 
 class UpdatePopup(tk.Toplevel):
     def __init__(self, parent, version_data, config, lang_dict):
@@ -707,7 +683,7 @@ class UpdatePopup(tk.Toplevel):
 
         self.dont_show = tk.BooleanVar()
         cb = tk.Checkbutton(bottom_frame, text=self.lang['dont_show_again'], variable=self.dont_show, 
-                           bg="#202020", fg="#dfe6e9", selectcolor="#202020", activebackground="#202020", font=("Segoe UI", 9))
+                            bg="#202020", fg="#dfe6e9", selectcolor="#202020", activebackground="#202020", font=("Segoe UI", 9))
         cb.pack(side='top', pady=(0, 10))
 
         btn_container = tk.Frame(bottom_frame, bg="#202020")
@@ -747,8 +723,8 @@ class UpdatePopup(tk.Toplevel):
         scrollbar.pack(side='right', fill='y')
 
         text_widget = tk.Text(txt_frame, bg="#2d3436", fg="#dfe6e9", font=("Segoe UI", 10), 
-                             bd=0, highlightthickness=0, wrap='word', padx=10, pady=10,
-                             yscrollcommand=scrollbar.set)
+                              bd=0, highlightthickness=0, wrap='word', padx=10, pady=10,
+                              yscrollcommand=scrollbar.set)
         text_widget.pack(side='left', fill='both', expand=True)
         scrollbar.config(command=text_widget.yview)
 
@@ -817,8 +793,10 @@ class FestivalPathOverlay:
         self.root.attributes('-transparentcolor', '#000001')
         
         self.gamepad = GamepadManager()
-        self.tts = EdgeTTSManager(self.lang)
+        self.tts = GoogleTTSManager(self.lang)
         self.vis = VisualBar(self.root, self.cfg)
+        self.curr_popup = CurrentLinePopup(self.root, self.cfg) # Yeni Popup Sınıfı
+        
         self.run = True; self.lock = False; self.vis_on = True; self.js=""; self.map={}; self.sid=None; self.inst="Guitar"; self.cache={}; self.lines=[]; self.lidx=0
         self.settings_window = None; self.last_btn_press = 0
 
@@ -826,6 +804,7 @@ class FestivalPathOverlay:
         self.bar = tk.Frame(self.cont, bg=self.cols['warn'], width=8); self.bar.pack(side='left', fill='y')
         self.main = tk.Frame(self.cont, bg=self.cols['panel']); self.main.pack(side='left', fill='both', expand=True, padx=8, pady=5)
         self.vis.setup(self.main)
+        self.curr_popup.setup()
         
         self.h_fr = tk.Frame(self.main, bg=self.cols['panel']); self.h_fr.pack(fill='x')
         self.lbl_ti = tk.Label(self.h_fr, text=self.L['system_starting'], font=("Segoe UI", 11, "bold"), fg="#dfe6e9", bg=self.cols['panel'], anchor='w'); self.lbl_ti.pack(side='left', fill='x', expand=True)
@@ -897,14 +876,27 @@ class FestivalPathOverlay:
     def nxt(self):
         if self.vis_on and self.sid and self.lidx < len(self.lines):
             l = self.lines[self.lidx]
-            self.current_line_text = l # Kaydet
-            if self.cfg.get('tts_enabled')=='True': self.tts.play_sequence(l)
-            # Dinamik Renk Haritasını VisualBar'a Gönder
-            self.vis.update(l, self.current_colors); self.lidx+=1
+            self.current_line_text = l 
+            
+            # Google Translate TTS Çal
+            if self.cfg.get('tts_enabled')=='True': self.tts.play_live(l)
+            
+            # Görsel Barı Güncelle
+            self.vis.update(l, self.current_colors)
+            
+            # --- YENİ: MEVCUT Satır Popup Güncelle ---
+            # Artık "Next Step" değil, "Current Step" gösteriyoruz.
+            self.curr_popup.update_text(l, self.current_colors)
+            
+            self.lidx+=1
     def tog(self): 
         self.vis_on = not self.vis_on
-        if self.vis_on: self.root.deiconify(); self.vis.set_visibility(True)
-        else: self.root.withdraw(); self.vis.set_visibility(False)
+        if self.vis_on: 
+            self.root.deiconify(); self.vis.set_visibility(True)
+            self.curr_popup.set_visibility(True)
+        else: 
+            self.root.withdraw(); self.vis.set_visibility(False)
+            self.curr_popup.set_visibility(False)
     def lck(self): 
         self.lock = not self.lock
         self.bar.config(bg=self.cols['dang'] if self.lock else (self.cols['succ'] if self.lbl_ti.cget('text')==self.L['ready'] else self.cols['warn']))
@@ -919,7 +911,7 @@ class FestivalPathOverlay:
     def apply(self):
         # Dil Ayarı
         l = self.cfg.get('language')
-        if l != self.lang: self.lang=l; self.L=LANGUAGES[l]; self.lbl_ti.config(text=self.L['ready']); self.tts=EdgeTTSManager(l)
+        if l != self.lang: self.lang=l; self.L=LANGUAGES[l]; self.lbl_ti.config(text=self.L['ready']); self.tts=GoogleTTSManager(l)
         
         # Renk Körü Modu Ayarı
         mode = self.cfg.get('color_blind_mode')
@@ -927,7 +919,8 @@ class FestivalPathOverlay:
 
         # Font ve Pencere
         self.txt.config(font=("Consolas", self.cfg.get('font_size', int), "bold"))
-        self.vis.setup(self.main); self.root.attributes('-alpha', self.cfg.get('opacity', float))
+        self.vis.setup(self.main); self.curr_popup.setup()
+        self.root.attributes('-alpha', self.cfg.get('opacity', float))
         bg = self.cols['panel'] if self.cfg.get('bg_visible')=='True' else '#000001'
         self.cont.config(bg=bg); self.main.config(bg=bg)
         for w in self.main.winfo_children():
@@ -945,6 +938,7 @@ class FestivalPathOverlay:
         # Visual Bar'ı mevcut satır ve yeni renklerle güncelle (FIX)
         if self.current_line_text:
             self.vis.update(self.current_line_text, self.current_colors)
+            self.curr_popup.update_text(self.current_line_text, self.current_colors)
 
     def sett(self): 
         # Toggle Mantığı: Açıksa kapat, kapalıysa aç
@@ -1032,6 +1026,7 @@ class FestivalPathOverlay:
         self.txt.config(state='normal'); self.txt.delete("1.0",'end'); self.lines=[]; self.lidx=0; 
         self.current_line_text = "" # Reset
         self.vis.update("", self.current_colors)
+        self.curr_popup.update_text("", self.current_colors)
         
         if pth:
             raw = pth.group(1).replace(", ", "\n").replace(",", "\n")
@@ -1059,7 +1054,7 @@ class FestivalPathOverlay:
         except: pass
         
     def st(self, k, e=""): self.lbl_ti.config(text=self.L.get(k, k)+e); self.bar.config(bg=self.cols['succ'] if k=='ready' else self.cols['warn'])
-    def close(self): self.run=False; self.vis.destroy(); self.root.destroy(); sys.exit()
+    def close(self): self.run=False; self.vis.destroy(); self.curr_popup.destroy(); self.root.destroy(); sys.exit()
 
 if __name__ == "__main__":
     r = tk.Tk(); app = FestivalPathOverlay(r); r.mainloop()
