@@ -28,7 +28,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
 # --- SABİTLER ---
-APP_VERSION = "v2.4"
+APP_VERSION = "v2.2"
 REPO_OWNER = "FNFest-TR"
 REPO_NAME = "FestiPath"
 DEVELOPER_NAME = "ekicionur"
@@ -1058,3 +1058,4 @@ class FestivalPathOverlay:
 
 if __name__ == "__main__":
     r = tk.Tk(); app = FestivalPathOverlay(r); r.mainloop()
+
