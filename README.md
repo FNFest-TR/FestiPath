@@ -1,60 +1,52 @@
-# 🎵 FestiPath v2.0
+# FestiPath Release Notes
 
-### 🇹🇷 [TÜRKÇE]
-**FestiPath büyük bir evrim geçirdi!**
-v2.0 ile birlikte arayüzümüzü modernize ettik, Gamepad sorunlarını kökten çözdük ve akıllı otomasyonlar ekledik.
-
-#### 🌟 Yenilikler ve Özellikler
-
-**🎨 Modern Arayüz (UI Overhaul)**
-* **Sekmeli Yapı:** Ayarlar menüsü artık dikey ve karmaşık değil; "Görünüm", "Kısayollar" ve "Genel" sekmelerine ayrılmış modern, yatay bir pencerede sunuluyor.
-* **Akıllı Güncelleme Ekranı:** Güncelleme notları artık çok daha okunaklı, maddeli ve önemli yerleri vurgulu şekilde gösteriliyor.
-
-**🎮 Gamepad Master (Anti-Drift)**
-* **Analog İptali:** Birçok kullanıcının yaşadığı "kendi kendine tuş basma" (stick drift) sorunu çözüldü. Program artık Gamepad'in Analog (Axis) hareketlerini tamamen görmezden geliyor. Sadece bastığınız tuşlar (A, B, X, Y, D-Pad vb.) algılanır.
-* **İkon Desteği:** Ayarlarda atadığınız Gamepad tuşları artık metin olarak değil, şık ikonlar (Ⓐ, Ⓑ, 🏠 vb.) olarak görünüyor.
-
-**🤖 Otomasyon ve Kolaylık**
-* **Otomatik İlk Okuma:** Şarkı başladığında ilk tuşa basmanıza gerek yok! Sistem şarkının başladığını algılayıp ilk yolu size otomatik söyler (Ayarlardan açıp kapatılabilir).
-* **Pencere Kurtarma (F7):** Overlay yanlışlıkla ekran dışına mı gitti? `F7` tuşuna basın ve anında ekranın ortasına geri gelsin.
-* **31. Nota Desteği:** Sesli okuma kapasitesi artırıldı, en uzun şarkılarda bile sorunsuz çalışıyor.
+**Version:** 2.3
+**Date:** 2026-01-30
 
 ---
 
-### 📥 Kurulum
-1.  Aşağıdaki **FestiPath.exe** dosyasını indirin.
-2.  Yönetici olarak çalıştırmanız önerilir.
-3.  İyi eğlenceler!
+## 🇹🇷 Türkçe (Turkish)
 
-*Not: Eğer eski sürümden geçiyorsanız `config.ini` dosyasını silmeniz önerilir, ancak zorunlu değildir.*
+### 🌟 Yeni Özellikler
 
----
----
+#### 1. Canlı Skor Penceresi (Live Score Popup)
+Artık şarkı çalarken performansınızı anlık takip edebileceğiniz şık bir bilgi penceresi eklendi.
+- **Anlık Sıralama Takibi:** Çaldığınız şarkıda hem Sezonluk hem de Genel (All-Time) dünya sıralamanızı anlık olarak gösterir.
+- **Yıldız Göstergesi:** Skorunuza göre kazandığınız yıldızları (⭐) dinamik olarak gösterir.
+- **Tam Kontrol:** Ayarlar menüsünden bu pencereyi açıp kapatabilir, yazı boyutunu ve şeffaflığını dilediğiniz gibi özelleştirebilirsiniz.
+- **Çoklu Dil Desteği:** Arayüz tamamen Türkçe ve İngilizce seçenekleriyle güncellendi.
 
-### 🇺🇸 [ENGLISH]
-**FestiPath has undergone a major evolution!**
-With v2.0, we have modernized the interface, solved Gamepad issues at the root, and added smart automations.
+#### 2. Gelişmiş Ayarlar Menüsü
+- Ayarlar penceresi yeniden tasarlandı. "Live Score" için özel bir sekme eklendi.
+- Tüm görsel ayarlar daha erişilebilir hale getirildi.
 
-#### 🌟 New Features and Changes
+### 🛠️ Düzeltmeler & İyileştirmeler
 
-**🎨 Modern Interface (UI Overhaul)**
-* **Tabbed Structure:** The settings menu is no longer vertical and complex; it represents a modern, horizontal window separated into "Visuals", "Hotkeys", and "General" tabs.
-* **Smart Update Screen:** Update notes are now much more legible, bulleted, and key information is highlighted effectively.
-
-**🎮 Gamepad Master (Anti-Drift)**
-* **Analog Disabled:** Solved the common "phantom input" (stick drift) issue. The program now completely ignores Analog (Axis) movements. Only digital button presses (A, B, X, Y, D-Pad, etc.) are detected.
-* **Icon Support:** Assigned Gamepad keys in settings now appear as stylish icons (Ⓐ, Ⓑ, 🏠, etc.) instead of plain text.
-
-**🤖 Automation & Convenience**
-* **Auto-Read First Line:** No need to press a key when the song starts! The system detects the start and automatically announces the first path (Toggleable in settings).
-* **Window Rescue (F7):** Did the overlay accidentally go off-screen? Press `F7` to instantly center it back on your screen.
-* **31st Note Support:** TTS capacity has been increased and works flawlessly even on the longest songs.
+- **Pencere Yönetimi İyileştirildi:** Yan pencereleri (Live Score, Visual Bar) taşırken ana pencerenin kaymasına neden olan hata giderildi. Artık her pencere bağımsız hareket ediyor.
+- **Seslendirme Düzeltmeleri:** Türkçe seslendirmede sıralama sayılarının (örn: "6.") daha doğal okunması sağlandı.
+- **Sistem Kararlılığı:** Uygulama başlatılırken veya ayar dosyası okunurken nadiren oluşan çökmeler giderildi.
+- **Arayüz Hızlandırması:** Anlık veri çekme işlemleri optimize edildi.
 
 ---
 
-### 📥 Installation
-1.  Download the **FestiPath.exe** file below.
-2.  Running as administrator is recommended.
-3.  Have fun!
+## 🇺🇸 English
 
-*Note: If upgrading from an older version, deleting the `config.ini` file is recommended but not mandatory.*
+### 🌟 New Features
+
+#### 1. Live Score Popup
+A new elegant popup window has been added to track your performance in real-time while playing.
+- **Real-Time Rank Tracking:** Instantly displays your world rank for both Seasonal and All-Time leaderboards for the current song.
+- **Star Indicator:** Dynamically shows the stars (⭐) earned based on your score.
+- **Full Control:** You can toggle this window, adjust font size, and customize opacity from the Settings menu.
+- **Multi-Language Support:** Interface fully updated with English and Turkish options.
+
+#### 2. Enhanced Settings Menu
+- The Settings window has been redesigned. A dedicated tab for "Live Score" has been added.
+- All visual settings are now more accessible.
+
+### 🛠️ Fixes & Improvements
+
+- **Window Management Improved:** Fixed an issue where dragging side windows (Live Score, Visual Bar) caused the main window to move. Each window now moves independently.
+- **TTS Corrections:** Improved natural reading of ordinal numbers (e.g., "6th") in Turkish TTS.
+- **System Stability:** Fixed rare crashes that occurred during startup or config file reading.
+- **UI Performance:** Real-time data fetching operations have been optimized.
