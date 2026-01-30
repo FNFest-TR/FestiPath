@@ -1,18 +1,18 @@
 {
-  "version": "v2.2",
+  "version": "v2.3",
   "url": "https://github.com/FNFest-TR/FestiPath/releases/latest",
   "notes_tr": [
-    "**TTS SORUNLARI GİDERİLDİ:** Sesli okumanın bazı durumlarda hiç çalışmaması veya sesin gelmemesi sorunu, ses motorunun tamamen yeniden yazılmasıyla fixlendi.",
-    "**AKILLI & HAFİF ALTYAPI:** Artık bilgisayarınıza yüzlerce ses dosyası kaydedilmiyor (Cache sistemi kaldırıldı). Uygulama çok daha hafif çalışıyor ve diskte çöp dosya bırakmıyor.",
-    "**YENİ BİLGİ PENCERESİ (POPUP):** Okunan satırı anlık olarak gösteren, renkli ve taşınabilir yeni bir mini pencere eklendi. (Ayarlardan açılabilir).",
-    "**KELİME DÜZELTMELERİ:** 'R, G, B' gibi harflerin tek tek harf olarak okunması engellendi. Artık seçili dile göre 'Kırmızı, Yeşil, Mavi' şeklinde tam kelime olarak okunuyor.",
-    "**GENİŞLETİLMİŞ OKUMA:** 1.5, 3.5 gibi küsuratlı sayılar ve listede olmayan karmaşık nota kalıpları artık sorunsuz seslendiriliyor."
+    "**CANLI SKOR PENCERESİ (YENİ):** Şarkı çalarken anlık dünya sıranızı (Sezonluk & Genel) ve kazandığınız yıldızları gösteren şık bir bilgi penceresi eklendi.",
+    "**STEALTH AUTH GÜVENLİĞİ:** Hesap güvenliğiniz için şifreleme altyapısı tamamen değiştirildi. Kod içinde artık hiçbir şifre barındırılmıyor.",
+    "**PENCERE YÖNETİMİ DÜZELTİLDİ:** Yan pencereleri (Live Score, Visual Bar) taşırken ana pencerenin kaymasına neden olan hata giderildi.",
+    "**DİL VE SES DÜZELTMELERİ:** Türkçe seslendirmede '6.' gibi sıra sayılarının daha doğal okunması sağlandı.",
+    "**GELİŞMİŞ AYARLAR:** Ayarlar menüsüne 'Live Score' sekmesi eklendi ve arayüz optimize edildi."
   ],
   "notes_en": [
-    "**TTS ISSUES FIXED:** Resolved critical bugs where text-to-speech would sometimes fail to start or produce no sound by completely overhauling the audio engine.",
-    "**SMART & LIGHTWEIGHT:** Removed the file caching system. The app no longer saves hundreds of audio files to your disk, making it much lighter and cleaner.",
-    "**NEW INFO POPUP:** Added a new, detachable, colored window that displays exactly what is being read in real-time (Can be enabled in Settings).",
-    "**PRONUNCIATION FIXES:** Fixed single letters (R, G, B) being read as characters. They are now read as full words (Red, Green, Blue) based on your language.",
-    "**EXTENDED READING:** Decimal values like 1.5, 3.5, and complex unlisted note patterns are now read flawlessly."
+    "**LIVE SCORE POPUP (NEW):** Added a stylish popup showing your real-time world rank (Seasonal & All-Time) and stars earned while playing.",
+    "**STEALTH AUTH SECURITY:** Completely overhauled the encryption infrastructure for account safety. No credentials are stored in the code anymore.",
+    "**WINDOW MANAGEMENT FIXED:** Fixed an issue where dragging side windows (Live Score, Visual Bar) caused the main window to move.",
+    "**LANGUAGE & TTS FIXES:** Improved natural reading of ordinal numbers (e.g., '6th') in Turkish TTS.",
+    "**ENHANCED SETTINGS:** Added a dedicated 'Live Score' tab to Settings and optimized the interface."
   ]
 }
